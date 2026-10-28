@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827"><meta name="description" content="Keena AI Translator">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Keena — AI Translator</title>
+<style>
+:root{--bg:#0b1220;--panel:#121d30;--panel2:#1a2940;--text:#f3f6fb;--muted:#aab7ca;--accent:#69d5c4;--line:#2c3a50}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(160deg,#0b1220,#101d30);color:var(--text);font:16px system-ui,-apple-system,Segoe UI,sans-serif;min-height:100vh}
+header{padding:20px 18px 12px;display:flex;align-items:center;gap:12px;max-width:850px;margin:auto}.logo{width:45px;height:45px;border-radius:15px;background:linear-gradient(135deg,#6ce0c9,#558cf5);display:grid;place-items:center;color:#071525;font-size:24px;font-weight:900}h1{font-size:23px;margin:0}header small{color:var(--muted)}
+main{max-width:850px;margin:auto;padding:10px 16px 40px}.tabs{display:flex;gap:8px;overflow:auto;padding:5px 0 14px}.tab{border:1px solid var(--line);background:var(--panel);color:var(--muted);border-radius:99px;padding:10px 15px;white-space:nowrap}.tab.active{background:var(--accent);color:#09201f;border-color:var(--accent);font-weight:700}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:16px;margin:0 0 14px}.langs{display:grid;grid-template-columns:1fr 42px 1fr;gap:8px;align-items:center}.langs select{min-width:0;width:100%;background:var(--panel2);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:15px}.swap{background:var(--panel2);color:var(--accent);border:1px solid var(--line);border-radius:12px;height:43px;font-size:20px}
+textarea{width:100%;resize:vertical;min-height:130px;background:transparent;border:0;color:var(--text);font:17px/1.5 inherit;outline:none;padding:12px 0}textarea::placeholder{color:#7f90a8}.out{white-space:pre-wrap;min-height:80px;color:#e4f8f4;line-height:1.55;overflow-wrap:anywhere}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:0;border-radius:13px;padding:12px 15px;background:var(--accent);color:#06201e;font-weight:750;font-size:15px}.btn.secondary{background:var(--panel2);border:1px solid var(--line);color:var(--text)}.btn:disabled{opacity:.5}.status{color:var(--muted);font-size:13px;margin-top:9px}.label{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}.hint{font-size:13px;color:var(--muted);line-height:1.5}.hidden{display:none!important}.row{display:flex;justify-content:space-between;align-items:center;gap:10px}.camera{display:block;width:100%;max-height:300px;object-fit:contain;border-radius:12px;margin-top:10px}.foot{text-align:center;color:#718198;font-size:12px;padding:16px}
+@media(min-width:650px){.columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.columns .card{margin-bottom:0}}
+</style>
+</head>
+<body>
+<header><div class="logo">K</div><div><h1>Keena</h1><small>Your personal language translator</small></div></header>
+<main>
+<nav class="tabs" aria-label="Translator tools">
+<button class="tab active" data-tab="text">Text</button><button class="tab" data-tab="voice">Voice</button><button class="tab" data-tab="camera">Camera</button><button class="tab" data-tab="conversation">Conversation</button><button class="tab" data-tab="messages">Messages</button>
+</nav>
+<section class="card">
+<div class="langs"><select id="from" aria-label="Translate from"></select><button class="swap" id="swap" title="Swap languages">⇄</button><select id="to" aria-label="Translate to"></select></div>
+<div class="status" id="status">Choose languages and enter text.</div>
+</section>
+<section id="textPanel" class="card">
+<div class="label">Your text</div><textarea id="source" placeholder="Type or paste text here…"></textarea>
+<div class="actions"><button class="btn" id="translate">Translate</button><button class="btn secondary" id="clear">Clear</button><button class="btn secondary" id="speakSource">🔊 Listen</button></div>
+</section>
+<section id="resultCard" class="card">
+<div class="row"><span class="label">Translation</span><button class="btn secondary" id="copy">Copy</button></div><div id="result" class="out">Your translation will appear here.</div>
+<div class="actions"><button class="btn secondary" id="speakResult">🔊 Listen</button></div>
+</section>
+<section id="voicePanel" class="card hidden">
+<div class="label">Voice translation</div><p class="hint">Tap the microphone, speak clearly, then translate the recognized words.</p>
+<div class="actions"><button class="btn" id="mic">🎙 Start speaking</button><button class="btn secondary" id="voiceTranslate">Translate speech</button></div><p id="voiceStatus" class="status">Speech recognition needs a supported browser and microphone permission.</p>
+</section>
+<section id="cameraPanel" class="card hidden">
+<div class="label">Translate text from a photo</div><p class="hint">Take a photo or choose an image. Keena will read the text using OCR.</p>
+<input type="file" id="photo" accept="image/*" capture="environment">
+<img id="preview" class="camera hidden" alt="Selected image preview">
+<div class="actions" style="margin-top:12px"><button class="btn" id="readPhoto">Read image text</button><button class="btn secondary" id="photoTranslate">Translate recognized text</button></div><p id="ocrStatus" class="status"></p>
+<textarea id="ocrText" placeholder="Text detected in your image…" rows="5"></textarea>
+</section>
+<section id="conversationPanel" class="card hidden">
+<div class="label">Live conversation</div><p class="hint">Take turns speaking. This uses your phone browser's speech recognition; it is not continuous simultaneous interpretation.</p>
+<div class="columns">
+<div class="card"><strong id="leftLanguage">Source language</strong><p id="leftText" class="out">Tap the button and speak.</p><button class="btn" id="leftMic">🎙 Speak</button></div>
+<div class="card"><strong id="rightLanguage">Target language</strong><p id="rightText" class="out">Translation appears here.</p><button class="btn secondary" id="rightListen">🔊 Play</button></div>
+</div>
+</section>
+<section id="messagesPanel" class="card hidden">
+<div class="label">Translate a message</div><p class="hint">Paste a message copied from WhatsApp, a game, or another app. Android's share/copy actions work outside Keena; paste it here to translate.</p>
+<textarea id="messageText" placeholder="Paste copied message…" rows="5"></textarea><div class="actions"><button class="btn" id="messageTranslate">Translate message</button><button class="btn secondary" id="paste">Paste clipboard</button></div>
+</section>
+<div class="foot">Keena v1 • Internet connection required • Translation is provided by an online service.</div>
+</main>
+<script>
+const languages=[["Auto detect","auto"],["Somali","so"],["English","en"],["Arabic","ar"],["Russian","ru"],["Chinese (Simplified)","zh-CN"],["French","fr"],["Spanish","es"],["Turkish","tr"],["Swahili","sw"],["Hindi","hi"],["German","de"],["Italian","it"],["Portuguese","pt"],["Japanese","ja"],["Korean","ko"],["Persian","fa"],["Urdu","ur"],["Amharic","am"],["Oromo","om"],["Tigrinya","ti"],["Dutch","nl"],["Indonesian","id"],["Thai","th"],["Vietnamese","vi"]];
+const from=document.getElementById('from'),to=document.getElementById('to');
+languages.forEach(([name,code])=>{from.add(new Option(name,code));to.add(new Option(name,code));});
+from.value='auto';to.value='en';
+const $=id=>document.getElementById(id); let activeTab='text',recognized='',ocrReady=false;
+function setStatus(s){$('status').textContent=s}
+function langName(code){return languages.find(x=>x[1]===code)?.[0]||code}
+function switchTab(tab){activeTab=tab;document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));['text','voice','camera','conversation','messages'].forEach(t=>$(t+'Panel').classList.toggle('hidden',t!==tab));$('resultCard').classList.toggle('hidden',tab==='camera'||tab==='conversation'||tab==='messages');$('leftLanguage').textContent=langName(from.value);$('rightLanguage').textContent=langName(to.value)}
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
+$('swap').onclick=()=>{if(from.value==='auto')return;let x=from.value;from.value=to.value;to.value=x;setStatus('Languages swapped.');$('leftLanguage').textContent=langName(from.value);$('rightLanguage').textContent=langName(to.value)};
+async function translateText(text){if(!text.trim()){setStatus('Enter or speak some text first.');return ''}setStatus('Translating…');try{
+const sl=from.value==='auto'?'auto':from.value,tl=to.value;
+const url='https://translate.googleapis.com/translate_a/single?client=gtx&sl='+encodeURIComponent(sl)+'&tl='+encodeURIComponent(tl)+'&dt=t&q='+encodeURIComponent(text);
+const response=await fetch(url);if(!response.ok)throw new Error('Translation service returned '+response.status);
+const data=await response.json();const out=(data[0]||[]).map(x=>x[0]||'').join('');if(!out)throw new Error('No translation returned');$('result').textContent=out;setStatus('Translated '+(data[2]||sl)+' → '+tl+'.');return out;
+}catch(e){setStatus('Could not translate. Check internet and try again.');$('result').textContent='Translation failed. Please try again.';return ''}}
+$('translate').onclick=()=>translateText($('source').value);
+$('clear').onclick=()=>{$('source').value='';$('result').textContent='Your translation will appear here.';setStatus('Cleared.')};
+$('copy').onclick=async()=>{try{await navigator.clipboard.writeText($('result').textContent);setStatus('Translation copied.')}catch(e){setStatus('Copy is unavailable; select the translation and copy it.')}};
+function speak(text,code){if(!text)return; if(!('speechSynthesis'in window)){setStatus('Speech playback is not supported in this browser.');return}speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(text);u.lang=code==='auto'?'en':code; speechSynthesis.speak(u)}
+$('speakSource').onclick=()=>speak($('source').value,from.value);$('speakResult').onclick=()=>speak($('result').textContent,to.value);
+function speechStart(onText,onDone){const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){setStatus('Speech recognition is not supported. Try Chrome on Android.');return}let r=new SR();r.lang=from.value==='auto'?'en-US':from.value;r.interimResults=false;r.maxAlternatives=1;r.onstart=()=>setStatus('Listening…');r.onerror=e=>setStatus('Microphone error: '+e.error);r.onresult=e=>{let t=e.results[0][0].transcript;onText(t);recognized=t};r.onend=()=>{setStatus('Speech captured.');if(onDone)onDone()};r.start()}
+$('mic').onclick=()=>speechStart(t=>{$('source').value=t;$('voiceStatus').textContent='Heard: '+t});
+$('voiceTranslate').onclick=()=>translateText($('source').value);
+$('leftMic').onclick=()=>speechStart(t=>{$('leftText').textContent=t},async()=>{let translated=await translateText($('leftText').textContent);$('rightText').textContent=translated||'No translation yet.'});
+$('rightListen').onclick=()=>speak($('rightText').textContent,to.value);
+$('photo').onchange=()=>{let f=$('photo').files[0];if(f){$('preview').src=URL.createObjectURL(f);$('preview').classList.remove('hidden');$('ocrStatus').textContent='Image selected.';ocrReady=false}};
+$('readPhoto').onclick=async()=>{let f=$('photo').files[0];if(!f){$('ocrStatus').textContent='Choose or take a photo first.';return} $('ocrStatus').textContent='Loading OCR engine…';try{if(!window.Tesseract){await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js')} $('ocrStatus').textContent='Reading image…';let res=await Tesseract.recognize(f,'eng');$('ocrText').value=res.data.text.trim();ocrReady=true;$('ocrStatus').textContent='Text recognized. Check it, then translate.'}catch(e){$('ocrStatus').textContent='OCR could not load. Check your connection and retry.'}};
+$('photoTranslate').onclick=()=>translateText($('ocrText').value);
+function loadScript(src){return new Promise((resolve,reject)=>{let s=document.createElement('script');s.src=src;s.onload=resolve;s.onerror=reject;document.head.appendChild(s)})}
+$('messageTranslate').onclick=()=>translateText($('messageText').value);
+$('paste').onclick=async()=>{try{$('messageText').value=await navigator.clipboard.readText();setStatus('Clipboard pasted.')}catch(e){setStatus('Clipboard permission blocked. Long-press the field and choose Paste.')}};
+from.onchange=()=>{$('leftLanguage').textContent=langName(from.value)};to.onchange=()=>{$('rightLanguage').textContent=langName(to.value)};
+if('serviceWorker'in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
+</body></html>
